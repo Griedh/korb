@@ -22,7 +22,7 @@ newtype ListingId = ListingId Text deriving stock (Generic, Show, Eq)
 instance FromJSON ListingId
 instance ToJSON ListingId
 
-newtype ProductId = ProductId Text deriving stock (Generic, Show, Eq)
+newtype ProductId = ProductId Text deriving stock (Generic, Show, Eq, Ord)
 instance FromJSON ProductId
 instance ToJSON ProductId
 
@@ -77,6 +77,11 @@ newtype SearchResponse = SearchResponse {products :: SearchProducts}
   deriving stock (Generic, Show, Eq)
 instance ToJSON SearchResponse
 instance FromJSON SearchResponse
+
+newtype PurchasedProductsResponse = PurchasedProductsResponse {purchasedProducts :: SearchProducts}
+  deriving stock (Generic, Show, Eq)
+instance ToJSON PurchasedProductsResponse
+instance FromJSON PurchasedProductsResponse
 
 -- Favorites (GET /favorites, POST /favorites/{listId}/lineitems, DELETE /favorites/{listId}/lineitems/{itemId})
 
@@ -498,6 +503,16 @@ newtype EbonsResponse = EbonsResponse {getEbons :: EbonList}
   deriving stock (Generic, Show, Eq)
 instance FromJSON EbonsResponse
 instance ToJSON EbonsResponse
+
+-- Suggestion Engine
+
+data Suggestion = Suggestion {product :: Product, freq :: Int}
+  deriving stock (Generic, Show)
+instance ToJSON Suggestion
+
+data SuggestionResponse = SuggestionResponse {suggestions :: [Suggestion], remainingArticlePriceCents :: CentPrice}
+  deriving stock (Generic, Show)
+instance ToJSON SuggestionResponse
 
 -- Generic response wrapper (all REWE responses wrap data in {"data": ...})
 

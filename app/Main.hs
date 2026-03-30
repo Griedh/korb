@@ -47,7 +47,7 @@ run = do
               Ebon (EbonDownload ebonId file) -> ebonReceipt client ebonId file >>= printValue pretty
               noFileAccess -> liftE $ case noFileAccess of
                 Basket BasketShow ->
-                  baskets client >>= printValue pretty
+                  basket client >>= printValue pretty
                 Basket (BasketAdd item) ->
                   basketsAdd client item >>= printValue pretty
                 Favorites FavoritesShow ->
@@ -76,3 +76,5 @@ run = do
                   getOrderHistory client >>= printValue pretty
                 Ebon EbonShow ->
                   ebons client >>= printValue pretty
+                Suggestion (ThresholdSuggestion num) ->
+                  thresholdSuggestion client num >>= printValue pretty

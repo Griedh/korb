@@ -15,6 +15,9 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
+echo "=== Updating version in korb.cabal ==="
+sed -i '' "s/^version:.*$/version:            ${VERSION}.0/" korb.cabal
+
 echo "=== Building korb ${VERSION} ==="
 cabal build
 
@@ -24,9 +27,6 @@ cp "${BUILT}" "${BINARY_NAME}"
 strip "${BINARY_NAME}"
 STRIPPED_SIZE=$(du -h "${BINARY_NAME}" | cut -f1)
 echo "Binary: ${BINARY_NAME} (${STRIPPED_SIZE})"
-
-echo "=== Updating version in korb.cabal ==="
-sed -i '' "s/^version:.*$/version:            ${VERSION}.0/" korb.cabal
 git add korb.cabal
 git commit -m "Release ${TAG}"
 git tag "${TAG}"

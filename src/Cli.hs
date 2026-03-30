@@ -35,6 +35,9 @@ data BasketCommand = BasketShow | BasketAdd Item
 data EbonCommand = EbonShow | EbonDownload EbonId FilePath
 data CheckoutCommand = GetCheckout | StartCheckout TimeslotId | PlaceOrder
 data OrderCommand = DeleteOrder OrderId | GetOrders | OrdersHistory | GetOrder OrderId
+newtype NumberOfSuggestions = NumberOfSuggestions Int
+newtype SuggestionCommand = ThresholdSuggestion NumberOfSuggestions
+
 data Command
   = Store StoreCommand
   | Search Text [SearchAttribute]
@@ -45,6 +48,7 @@ data Command
   | Ebon EbonCommand
   | Checkout CheckoutCommand
   | Order OrderCommand
+  | Suggestion SuggestionCommand
 
 favoritesAddParser :: Parser FavoritesCommand
 favoritesAddParser =
@@ -128,6 +132,18 @@ loginParser = pure Login
 
 slotsParser :: Parser Command
 slotsParser = pure Slots
+
+suggestionParser :: Parser Command
+suggestionParser =
+  Suggestion . ThresholdSuggestion
+    <$> hsubparser
+      ( command
+          "threshold"
+          ( info
+              (argument (NumberOfSuggestions <$> auto) (metavar "NUM_SUGGESTIONS"))
+              (progDesc "Creates suggestion to add to the basket to reach the threshold for free pickup.")
+          )
+      )
 
 checkoutStartParser :: Parser CheckoutCommand
 checkoutStartParser =
@@ -250,6 +266,12 @@ commandParser =
         "ebons"
         (info ebonParser (progDesc "Show the ebons (no args), or use 'download' subcommand to get the pdf."))
       <> command
+        "suggestion"
+        ( info
+            suggestionParser
+            (progDesc "Create suggestions.")
+        )
+      <> command
         "checkout"
         ( info
             checkoutParser
@@ -306,6 +328,9 @@ examples =
     , "  korb orders history              Show all orders."
     , "  korb orders get <ORDER_ID>       Get an order (with details) by id."
     , "  korb orders delete <ORDER_ID>    Cancel an order by order ID - will give 200 on successive calls."
+    , ""
+    , "  korb suggestion threshold <N>    Suggest N items to add to reach free pickup threshold."
+    , "                                   Ranks by purchase frequency, excludes items already in basket."
     , ""
     , "  korb ebons                       List digital receipts (eBons)."
     , "  korb ebons download <EBON_ID>    Download eBon PDF. --output FILE (default: ebon.pdf)"

@@ -122,6 +122,9 @@ Commands:
   korb orders get <ORDER_ID>       Get an order (with details) by id.
   korb orders delete <ORDER_ID>    Cancel an order by order ID - will give 200 on successive calls.
 
+  korb suggestion threshold <N>    Suggest N items to add to reach free pickup threshold.
+                                   Ranks by purchase frequency, excludes items already in basket.
+
   korb ebons                       List digital receipts (eBons).
   korb ebons download <EBON_ID>    Download eBon PDF. --output FILE (default: ebon.pdf)
 

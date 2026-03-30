@@ -1,7 +1,7 @@
 module ReweApi where
 
 import Auth.Types (AccessToken (..), Auth (..))
-import Cli (WwIdent (..), ZipCode (..))
+import Cli (NumberOfSuggestions (NumberOfSuggestions), WwIdent (..), ZipCode (..))
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except (throwE)
@@ -9,10 +9,14 @@ import Data.Aeson (object)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.Foldable (find)
-import Data.Maybe (fromMaybe)
+import Data.List (sortOn)
+import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Ord (Down (Down))
 import Data.Text (Text, intercalate, isInfixOf, pack, toLower)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Time (getCurrentTimeZone, utcToZonedTime, zonedTimeToUTC)
+import Data.Traversable (forM)
 import Errors (
   ApiError (ApiError),
   AppError (AppFileError),
@@ -47,6 +51,7 @@ data ReweAuthedApi = ReweAuthedApi
   , deleteOrder :: OrderId -> IOE ApiError (ReweResponse OrderCancelResponse)
   , getEbons :: IOE ApiError (ReweResponse EbonsResponse)
   , getReceipt :: EbonId -> IOE ApiError ByteString
+  , getPurchasedProducts :: IOE ApiError (ReweResponse PurchasedProductsResponse)
   }
 
 newtype RewePublicApi = RewePublicApi
@@ -122,6 +127,7 @@ mkReweAuthedClient (HttpClient{get, post, delete, patch, getBytes}) auth (Curren
           delete (apiBase /: "orders" /: orderId) mandatoryHeaders
       , getEbons = get (apiBase /: "ebons") mandatoryHeaders
       , getReceipt = \(EbonId ebonId) -> getBytes (apiBase /: "receipts" /: ebonId /: "pdf") mandatoryHeaders
+      , getPurchasedProducts = get (apiBase /: "purchased-products") mandatoryHeaders
       }
 
 searchRewe :: RewePublicApi -> Text -> [SearchAttribute] -> IOE ApiError [Product]
@@ -156,16 +162,17 @@ favoritesDelete api@ReweAuthedApi{deleteFavourite} itemId = do
   listId <- defaultFavoriteListId api
   deleteFavourite listId itemId
 
-baskets :: ReweAuthedApi -> IOE ApiError Basket
-baskets ReweAuthedApi{getBaseket} = do
+basket :: ReweAuthedApi -> IOE ApiError Basket
+basket ReweAuthedApi{getBaseket} = do
   reweRes <- getBaseket
   pure reweRes.data_.basket
 
 basketsAdd :: ReweAuthedApi -> Item -> IOE ApiError (Maybe LineItem)
 basketsAdd ReweAuthedApi{getBaseket, addItemToBasket} Item{listingId, quantity} = do
-  currentBasket <- getBaseket
-  let basket = currentBasket.data_.basket
-  reweRes <- addItemToBasket basket.id listingId (fromMaybe (Qty 1) quantity) basket.version
+  reweResponse <- getBaseket
+  let currentBasket = reweResponse.data_.basket
+  reweRes <-
+    addItemToBasket currentBasket.id listingId (fromMaybe (Qty 1) quantity) currentBasket.version
   let wasDelete = any (\(Qty q) -> q <= 0) quantity
   let addedLineItem =
         find (\li -> li.product.listing.listingId == listingId) reweRes.data_.basket.lineItems
@@ -186,9 +193,10 @@ slots ReweAuthedApi{getSlots} = do
 
 checkout :: ReweAuthedApi -> IOE ApiError CheckoutResponse
 checkout api@ReweAuthedApi{postCheckout} = do
-  basket <- baskets api
-  when (null basket.lineItems) $ throwE (ApiError "Basket is empty - can't checkout an empty basket.")
-  (.data_) <$> postCheckout basket.id
+  currentBasket <- basket api
+  when (null currentBasket.lineItems) $
+    throwE (ApiError "Basket is empty - can't checkout an empty basket.")
+  (.data_) <$> postCheckout currentBasket.id
 
 checkoutTimeslot :: ReweAuthedApi -> TimeslotId -> IOE ApiError CheckoutResponse
 checkoutTimeslot api@ReweAuthedApi{patchCheckoutTimeslot, reserveTimeslot = reserve, addPayment} timeslot = do
@@ -229,3 +237,22 @@ ebonReceipt ReweAuthedApi{getReceipt} ebonId filePath = do
   pdfBytes <- liftE $ getReceipt ebonId
   liftIOE (AppFileError . FileError) $ BS.writeFile filePath pdfBytes
   pure $ "Stored receipt to: " <> pack filePath
+
+thresholdSuggestion :: ReweAuthedApi -> NumberOfSuggestions -> IOE ApiError SuggestionResponse
+thresholdSuggestion api@ReweAuthedApi{getPurchasedProducts} (NumberOfSuggestions numSuggest) = do
+  oldOrderEntries <- getOrderHistory api
+  orderedProductIds <- concat <$> forM oldOrderEntries fetchActualOrder
+  let productOrderFrequencies = Map.fromListWith (+) $ (,1 :: Int) <$> orderedProductIds
+  purchasedProducts <- (.data_.purchasedProducts.products) <$> getPurchasedProducts
+  -- filters to at least once bought items
+  let purchasableWithFrequency =
+        mapMaybe (\p -> Suggestion p <$> Map.lookup p.productId productOrderFrequencies) purchasedProducts
+  currentBasket <- basket api
+  let purchasedNotInBasket = filter (notInBasket currentBasket) purchasableWithFrequency
+      remainingPrice = maybe (CentPrice 0) (.remainingArticlePrice) currentBasket.staggerings.nextStaggering
+      sortedByFreq = take numSuggest $ sortOn (Down . (.freq)) purchasedNotInBasket
+  pure $ SuggestionResponse sortedByFreq remainingPrice
+ where
+  fetchActualOrder ordHist = productIdsFromOrder <$> getOneOrder api ordHist.orderId
+  productIdsFromOrder order = mapMaybe (.productId) (order.subOrders >>= (.lineItems))
+  notInBasket b suggestion = all (\li -> li.product.productId /= suggestion.product.productId) b.lineItems

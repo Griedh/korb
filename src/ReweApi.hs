@@ -6,12 +6,21 @@ import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except (throwE)
 import Data.Aeson (object)
+import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
 import Data.Foldable (find)
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, intercalate, isInfixOf, toLower)
+import Data.Text (Text, intercalate, isInfixOf, pack, toLower)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Time (getCurrentTimeZone, utcToZonedTime, zonedTimeToUTC)
-import Errors (ApiError (ApiError), AppError, IOE)
+import Errors (
+  ApiError (ApiError),
+  AppError (AppFileError),
+  FileError (FileError),
+  IOE,
+  LiftError (liftE),
+  liftIOE,
+ )
 import HttpClient
 import Network.HTTP.Req
 import ReweApi.Types
@@ -36,6 +45,8 @@ data ReweAuthedApi = ReweAuthedApi
   , getOrders :: IOE ApiError (ReweResponse OrderHistoryResponse)
   , getOrder :: OrderId -> IOE ApiError (ReweResponse OrderDetailResponse)
   , deleteOrder :: OrderId -> IOE ApiError (ReweResponse OrderCancelResponse)
+  , getEbons :: IOE ApiError (ReweResponse EbonsResponse)
+  , getReceipt :: EbonId -> IOE ApiError ByteString
   }
 
 newtype RewePublicApi = RewePublicApi
@@ -56,7 +67,7 @@ mkRewePublicClient (HttpClient{get}) (CurrentStore (WwIdent wwIdent) (ZipCode zi
         }
 
 mkReweAuthedClient :: HttpClient -> Auth -> CurrentStore -> IOE AppError ReweAuthedApi
-mkReweAuthedClient (HttpClient{get, post, delete, patch}) auth (CurrentStore (WwIdent wwIdent) (ZipCode zipCode)) = do
+mkReweAuthedClient (HttpClient{get, post, delete, patch, getBytes}) auth (CurrentStore (WwIdent wwIdent) (ZipCode zipCode)) = do
   (AccessToken tkn) <- auth.getValidToken
   let authHeader = oAuth2Bearer (encodeUtf8 tkn)
   let mandatoryHeaders =
@@ -109,6 +120,8 @@ mkReweAuthedClient (HttpClient{get, post, delete, patch}) auth (CurrentStore (Ww
       , getOrder = \(OrderId orderId) -> get (apiBase /: "orders" /: orderId) mandatoryHeaders
       , deleteOrder = \(OrderId orderId) ->
           delete (apiBase /: "orders" /: orderId) mandatoryHeaders
+      , getEbons = get (apiBase /: "ebons") mandatoryHeaders
+      , getReceipt = \(EbonId ebonId) -> getBytes (apiBase /: "receipts" /: ebonId /: "pdf") mandatoryHeaders
       }
 
 searchRewe :: RewePublicApi -> Text -> [SearchAttribute] -> IOE ApiError [Product]
@@ -207,3 +220,12 @@ deleteOpenOrder ReweAuthedApi{deleteOrder} orderId = (.data_) <$> deleteOrder or
 
 getOneOrder :: ReweAuthedApi -> OrderId -> IOE ApiError OrderDetail
 getOneOrder ReweAuthedApi{getOrder} orderId = (.data_.orderDetails) <$> getOrder orderId
+
+ebons :: ReweAuthedApi -> IOE ApiError [EbonEntry]
+ebons ReweAuthedApi{getEbons} = (.data_.getEbons.items) <$> getEbons
+
+ebonReceipt :: ReweAuthedApi -> EbonId -> FilePath -> IOE AppError Text
+ebonReceipt ReweAuthedApi{getReceipt} ebonId filePath = do
+  pdfBytes <- liftE $ getReceipt ebonId
+  liftIOE (AppFileError . FileError) $ BS.writeFile filePath pdfBytes
+  pure $ "Stored receipt to: " <> pack filePath

@@ -32,3 +32,4 @@ class LiftError e where
 instance LiftError ApiError where liftE = withExceptT AppApiError
 instance LiftError AuthError where liftE = withExceptT AppAuthError
 instance LiftError FileError where liftE = withExceptT AppFileError
+instance LiftError AppError where liftE = id

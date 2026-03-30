@@ -122,6 +122,9 @@ Commands:
   korb orders get <ORDER_ID>       Get an order (with details) by id.
   korb orders delete <ORDER_ID>    Cancel an order by order ID - will give 200 on successive calls.
 
+  korb ebons                       List digital receipts (eBons).
+  korb ebons download <EBON_ID>    Download eBon PDF. --output FILE (default: ebon.pdf)
+
   korb login                       Authenticate via REWE PKCE browser flow. Stores tokens in Keychain.
 
 All commands support --pretty for formatted JSON output.

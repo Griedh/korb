@@ -183,4 +183,6 @@ failingClient =
     , getOrders = throwE (ApiError "not implemented")
     , getOrder = \_ -> throwE (ApiError "not implemented")
     , deleteOrder = \_ -> throwE (ApiError "not implemented")
+    , getEbons = throwE (ApiError "not implemented")
+    , getReceipt = \_ -> throwE (ApiError "not implemented")
     }

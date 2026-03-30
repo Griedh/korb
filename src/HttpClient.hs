@@ -26,6 +26,8 @@ data HttpClient = HttpClient
       forall res req. (FromJSON res, ToJSON req) => req -> Url 'Https -> Option 'Https -> IOE ApiError res
   , urlFromEncodedPost ::
       forall res. (FromJSON res) => FormUrlEncodedParam -> Url 'Https -> IOE ApiError res
+  , getBytes ::
+      Url 'Https -> Option 'Https -> IOE ApiError ByteString
   }
 
 mkHttpClient :: IOE ApiError HttpClient
@@ -39,6 +41,7 @@ mkHttpClient = do
       , post = postRewe httpConfig
       , patch = patchRewe httpConfig
       , urlFromEncodedPost = urlFormEncodeRewe httpConfig
+      , getBytes = getReweRaw httpConfig
       }
 
 certPem :: ByteString
@@ -91,6 +94,10 @@ getRewe :: (FromJSON res) => HttpConfig -> Url 'Https -> Option 'Https -> IOE Ap
 getRewe config url options =
   decodeResponse url
     =<< runReq config (req GET url NoReqBody bsResponse (options <> stealthHeaders))
+
+getReweRaw :: HttpConfig -> Url 'Https -> Option 'Https -> IOE ApiError ByteString
+getReweRaw config url options =
+  responseBody <$> runReq config (req GET url NoReqBody bsResponse (options <> stealthHeaders))
 
 urlFormEncodeRewe ::
   (FromJSON res) => HttpConfig -> FormUrlEncodedParam -> Url 'Https -> IOE ApiError res

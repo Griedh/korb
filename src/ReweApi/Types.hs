@@ -461,6 +461,44 @@ newtype ReserveTimeslotResponse = ReserveTimeslotResponse {createTimeslotReserva
 instance FromJSON ReserveTimeslotResponse
 instance ToJSON ReserveTimeslotResponse
 
+-- Ebons (GET /ebons)
+
+newtype EbonId = EbonId Text deriving stock (Generic, Show, Eq)
+instance FromJSON EbonId
+instance ToJSON EbonId
+
+data EbonMarket = EbonMarket
+  { name :: Text
+  , city :: Text
+  , wwIdent :: Text
+  , street :: Text
+  , zipCode :: Text
+  }
+  deriving stock (Generic, Show, Eq)
+instance FromJSON EbonMarket
+instance ToJSON EbonMarket
+
+data EbonEntry = EbonEntry
+  { receiptId :: EbonId
+  , receiptTimestamp :: Text
+  , receiptTotalPrice :: CentPrice
+  , market :: EbonMarket
+  , cancelled :: Bool
+  }
+  deriving stock (Generic, Show, Eq)
+instance FromJSON EbonEntry
+instance ToJSON EbonEntry
+
+newtype EbonList = EbonList {items :: [EbonEntry]}
+  deriving stock (Generic, Show, Eq)
+instance FromJSON EbonList
+instance ToJSON EbonList
+
+newtype EbonsResponse = EbonsResponse {getEbons :: EbonList}
+  deriving stock (Generic, Show, Eq)
+instance FromJSON EbonsResponse
+instance ToJSON EbonsResponse
+
 -- Generic response wrapper (all REWE responses wrap data in {"data": ...})
 
 newtype ReweResponse a = ReweResponse {data_ :: a} deriving stock (Show, Generic)

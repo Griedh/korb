@@ -42,32 +42,37 @@ run = do
       liftE readSettings >>= \currentStore -> case needsCurrentStore of
         Search query attributes -> liftE $ searchRewe (publicClient currentStore) query attributes >>= printValue pretty
         needsAuth ->
-          authedClient currentStore >>= \client -> liftE $ case needsAuth of
-            Basket BasketShow ->
-              baskets client >>= printValue pretty
-            Basket (BasketAdd item) ->
-              basketsAdd client item >>= printValue pretty
-            Favorites FavoritesShow ->
-              favorites client Nothing >>= printValue pretty
-            Favorites (FavoritesFilter query) ->
-              favorites client (Just query) >>= printValue pretty
-            Favorites (FavoritesAdd listingId productId) ->
-              favoritesAdd client listingId productId >>= printValue pretty
-            Favorites (FavoritesRemove itemId) ->
-              favoritesDelete client itemId >>= printValue pretty
-            Slots ->
-              slots client >>= printValue pretty
-            Checkout (StartCheckout timeslot) ->
-              checkoutTimeslot client timeslot >>= printValue pretty
-            Checkout GetCheckout ->
-              checkout client >>= printValue pretty
-            Checkout PlaceOrder ->
-              orderCheckout client >>= printValue pretty
-            Order (DeleteOrder orderId) ->
-              deleteOpenOrder client orderId >>= printValue pretty
-            Order (GetOrder orderId) ->
-              getOneOrder client orderId >>= printValue pretty
-            Order GetOrders ->
-              getOpenOrders client >>= printValue pretty
-            Order OrdersHistory ->
-              getOrderHistory client >>= printValue pretty
+          authedClient currentStore >>= \client ->
+            case needsAuth of
+              Ebon (EbonDownload ebonId file) -> ebonReceipt client ebonId file >>= printValue pretty
+              noFileAccess -> liftE $ case noFileAccess of
+                Basket BasketShow ->
+                  baskets client >>= printValue pretty
+                Basket (BasketAdd item) ->
+                  basketsAdd client item >>= printValue pretty
+                Favorites FavoritesShow ->
+                  favorites client Nothing >>= printValue pretty
+                Favorites (FavoritesFilter query) ->
+                  favorites client (Just query) >>= printValue pretty
+                Favorites (FavoritesAdd listingId productId) ->
+                  favoritesAdd client listingId productId >>= printValue pretty
+                Favorites (FavoritesRemove itemId) ->
+                  favoritesDelete client itemId >>= printValue pretty
+                Slots ->
+                  slots client >>= printValue pretty
+                Checkout (StartCheckout timeslot) ->
+                  checkoutTimeslot client timeslot >>= printValue pretty
+                Checkout GetCheckout ->
+                  checkout client >>= printValue pretty
+                Checkout PlaceOrder ->
+                  orderCheckout client >>= printValue pretty
+                Order (DeleteOrder orderId) ->
+                  deleteOpenOrder client orderId >>= printValue pretty
+                Order (GetOrder orderId) ->
+                  getOneOrder client orderId >>= printValue pretty
+                Order GetOrders ->
+                  getOpenOrders client >>= printValue pretty
+                Order OrdersHistory ->
+                  getOrderHistory client >>= printValue pretty
+                Ebon EbonShow ->
+                  ebons client >>= printValue pretty

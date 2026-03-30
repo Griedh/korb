@@ -11,6 +11,7 @@ import Options.Applicative
 import Options.Applicative.Help (Doc, vsep)
 import Paths_korb (version)
 import ReweApi.Types (
+  EbonId (EbonId),
   Item (..),
   ItemId (..),
   ListingId (..),
@@ -31,6 +32,7 @@ data FavoritesCommand
   | FavoritesAdd ListingId ProductId
   | FavoritesRemove ItemId
 data BasketCommand = BasketShow | BasketAdd Item
+data EbonCommand = EbonShow | EbonDownload EbonId FilePath
 data CheckoutCommand = GetCheckout | StartCheckout TimeslotId | PlaceOrder
 data OrderCommand = DeleteOrder OrderId | GetOrders | OrdersHistory | GetOrder OrderId
 data Command
@@ -40,6 +42,7 @@ data Command
   | Slots
   | Favorites FavoritesCommand
   | Basket BasketCommand
+  | Ebon EbonCommand
   | Checkout CheckoutCommand
   | Order OrderCommand
 
@@ -151,6 +154,27 @@ checkoutParser =
             <|> pure GetCheckout
         )
 
+ebonDownloadParser :: Parser EbonCommand
+ebonDownloadParser =
+  ( EbonDownload . EbonId
+      <$> argument str (metavar "EBON_ID")
+  )
+    <*> option str (long "output" <> help "Output file path" <> metavar "FILE" <> value "ebon.pdf")
+
+ebonParser :: Parser Command
+ebonParser =
+  Ebon
+    <$> ( hsubparser
+            ( command
+                "download"
+                ( info
+                    ebonDownloadParser
+                    (progDesc "Download an ebon by specified id to the given file-path.")
+                )
+            )
+            <|> pure EbonShow
+        )
+
 basketAddParser :: Parser BasketCommand
 basketAddParser =
   ( (\prodId qty -> BasketAdd $ Item (ListingId prodId) (Qty <$> qty))
@@ -223,6 +247,9 @@ commandParser =
         "basket"
         (info basketParser (progDesc "Show current basket (no args), or use 'add' subcommand"))
       <> command
+        "ebons"
+        (info ebonParser (progDesc "Show the ebons (no args), or use 'download' subcommand to get the pdf."))
+      <> command
         "checkout"
         ( info
             checkoutParser
@@ -279,6 +306,9 @@ examples =
     , "  korb orders history              Show all orders."
     , "  korb orders get <ORDER_ID>       Get an order (with details) by id."
     , "  korb orders delete <ORDER_ID>    Cancel an order by order ID - will give 200 on successive calls."
+    , ""
+    , "  korb ebons                       List digital receipts (eBons)."
+    , "  korb ebons download <EBON_ID>    Download eBon PDF. --output FILE (default: ebon.pdf)"
     , ""
     , "  korb login                       Authenticate via REWE PKCE browser flow. Stores tokens in Keychain."
     , ""

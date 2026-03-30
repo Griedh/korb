@@ -4,10 +4,12 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Text
 import Data.UUID qualified as UUID
+import Data.Version (showVersion)
 import Data.Void (Void)
 import Errors (IOE)
 import Options.Applicative
 import Options.Applicative.Help (Doc, vsep)
+import Paths_korb (version)
 import ReweApi.Types (
   Item (..),
   ItemId (..),
@@ -231,7 +233,7 @@ commandParser =
         (info orderParser (progDesc "Show open orders (no args), or use 'delete'/'history' subcommand"))
 
 versionOption :: Parser (a -> a)
-versionOption = infoOption "korb 0.1.0.0" (long "version" <> short 'v' <> help "Show version")
+versionOption = infoOption ("korb " <> showVersion version) (long "version" <> short 'v' <> help "Show version")
 
 prettyOutput :: Parser Bool
 prettyOutput = switch (long "pretty" <> short 'p' <> help "Pretty JSON output")

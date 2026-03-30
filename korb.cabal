@@ -69,7 +69,8 @@ library
     exposed-modules:  Cli, StoreApi, HttpClient, ReweApi, ReweApi.Types, Errors, Storage, Auth, Auth.Types
 
     -- Modules included in this library but not exported.
-    -- other-modules:
+    other-modules:
+        Paths_korb
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

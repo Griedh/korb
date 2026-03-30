@@ -1443,7 +1443,7 @@ paths:
               example:
                 data:
                   getReweIdByCustomerUuid:
-                    reweId: 'REDACTED'
+                    reweId: REDACTED
                     registrations:
                     - ebon
                 extensions:
@@ -2006,16 +2006,17 @@ paths:
   /baskets/{id}:
     get:
       summary: GET basket by id
-      description: Read-only basket fetch. Does not increment version. Requires basket ID from a prior POST /baskets call.
+      description: Read-only basket fetch. Does not increment version. Requires basket
+        ID from a prior POST /baskets call.
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
         '200':
-          description: 'Returns full basket state identical to POST /baskets response'
+          description: Returns full basket state identical to POST /baskets response
   /baskets:
     post:
       summary: POST baskets
@@ -14316,7 +14317,7 @@ paths:
                     zipCode: '82418'
                     serviceType: PICKUP
                     additionalMessage: ''
-                    phoneNumber: 'REDACTED'
+                    phoneNumber: REDACTED
                     isFreeOrder: false
                     invoiceAddress:
                     selectedDeliveryAddress:
@@ -15064,7 +15065,7 @@ paths:
                     zipCode: '82418'
                     serviceType: PICKUP
                     additionalMessage: ''
-                    phoneNumber: 'REDACTED'
+                    phoneNumber: REDACTED
                     isFreeOrder: false
                     invoiceAddress:
                     selectedDeliveryAddress:
@@ -15843,7 +15844,7 @@ paths:
                     zipCode: '82418'
                     serviceType: PICKUP
                     additionalMessage: ''
-                    phoneNumber: 'REDACTED'
+                    phoneNumber: REDACTED
                     isFreeOrder: false
                     invoiceAddress:
                     selectedDeliveryAddress:
@@ -16310,7 +16311,7 @@ paths:
                     zipCode: '82418'
                     serviceType: PICKUP
                     additionalMessage: ''
-                    phoneNumber: 'REDACTED'
+                    phoneNumber: REDACTED
                     isFreeOrder: false
                     invoiceAddress:
                     selectedDeliveryAddress:
@@ -17084,7 +17085,7 @@ paths:
                         fulfilledOrder:
                         pickedOrder:
                       lastStatusUpdate:
-                      callbackPhoneNumber: 'REDACTED'
+                      callbackPhoneNumber: REDACTED
                       orderActions:
                       - modify
                       - cancel
@@ -20146,13 +20147,15 @@ paths:
         required: false
         schema:
           type: string
-        description: Filter by category slug (e.g. "fleisch", "obst-gemuese"). Slugs from GET /shop-categories.
+        description: Filter by category slug (e.g. "fleisch", "obst-gemuese"). Slugs
+          from GET /shop-categories.
       - name: attribute
         in: query
         required: false
         schema:
           type: string
-        description: Only works inside the filters param, not as standalone query param. Values include organic, vegan, regional.
+        description: Only works inside the filters param, not as standalone query
+          param. Values include organic, vegan, regional.
       - name: serviceType
         in: query
         required: false
@@ -20165,6 +20168,156 @@ paths:
         schema:
           type: string
         description: Market ID
+  /ebons:
+    get:
+      summary: GET ebons
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getEbons:
+                        type: object
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                receiptId:
+                                  type: string
+                                receiptTimestamp:
+                                  type: string
+                                receiptTotalPrice:
+                                  type: number
+                                market:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    city:
+                                      type: string
+                                    wwIdent:
+                                      type: string
+                                    street:
+                                      type: string
+                                    zipCode:
+                                      type: string
+                                cancelled:
+                                  type: boolean
+                          pagination:
+                            type: object
+                            properties:
+                              objectsPerPage:
+                                type: number
+                              currentPage:
+                                type: number
+                              pageCount:
+                                type: number
+                              objectCount:
+                                type: number
+                          availableFilters:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                year:
+                                  type: number
+                                month:
+                                  type: number
+                                resultCount:
+                                  type: number
+                      getEbonStatus:
+                        type: object
+                        properties:
+                          isSubscribed:
+                            type: boolean
+                  extensions:
+                    type: object
+                    properties:
+                      http:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            path:
+                              type: array
+                              items:
+                                type: string
+                            message:
+                              type: string
+                            statusCode:
+                              type: number
+                            responseBody:
+                              type: object
+                              nullable: true
+              example:
+                data:
+                  getEbons:
+                    items:
+                    - receiptId: rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+                      receiptTimestamp: '2026-03-24T13:51:13Z'
+                      receiptTotalPrice: 2222
+                      market:
+                        name: REWE Markt
+                        city: CCC
+                        wwIdent: '440'
+                        street: K
+                        zipCode: '23241'
+                      cancelled: false
+                    pagination:
+                      objectsPerPage: 20
+                      currentPage: 1
+                      pageCount: 1
+                      objectCount: 12
+                    availableFilters:
+                    - year: 2026
+                      month: 3
+                      resultCount: 3
+                    - year: 2026
+                      month: 2
+                      resultCount: 6
+                    - year: 2026
+                      month: 1
+                      resultCount: 3
+                  getEbonStatus:
+                    isSubscribed: true
+                extensions:
+                  http:
+                  - path:
+                    - getEbonStatus
+                    message: OK
+                    statusCode: 200
+                    responseBody:
+                  - path:
+                    - getEbons
+                    message: OK
+                    statusCode: 200
+                    responseBody:
+      parameters:
+      - name: objectsPerPage
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: number
+  /receipts/1a5f12a5-0cc9-3a14-a64c-cc3c102f6b4c/pdf:
+    get:
+      summary: GET pdf
+      responses:
+        '200':
+          description: OK
+          content: {}
 x-path-templates:
 # Remove the ignore: prefix to generate an endpoint with its URL
 # Lines that are closer to the top take precedence, the matching is greedy
@@ -20187,9 +20340,7 @@ x-path-templates:
 - ignore:/checkouts/2a716baf-6434-4898-87fc-4389f6d352c5/orders
 - ignore:/checkouts/2a716baf-6434-4898-87fc-4389f6d352c5/payments
 - ignore:/checkouts/2a716baf-6434-4898-87fc-4389f6d352c5/timeslots
-- ignore:/ebons
 - ignore:/products/{id}
 - ignore:/products/151854
 - ignore:/products/recommendations
-- ignore:/receipts/c99c80c0-2bca-3562-9378-52b5acacd5ba/pdf
 - /service-portfolio/82418

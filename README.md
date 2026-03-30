@@ -6,6 +6,18 @@ The CLI is handwritten in Haskell, but designed to be a CLI mostly used by agent
 
 https://github.com/user-attachments/assets/308041f4-4b1f-4db4-9040-0e157247efea
 
+## // My e2e flow
+
+My current E2E flow (I use claude to run korb) is as follows:
+1. **Add grocery when I think of it** A Siri shortcut appends items to a shared markdown file. I say *"Add oat milk to the shopping list"* in the kitchen and it's on the list.
+2. **Weekly Order** Tell the agent "use korb to buy groceries, I need X,Y,Z". It begins from a default template (my usual items and quantities, created with `korb orders history`) and checks the shopping list file and my input for anything extra.
+3. **Adjust template suggestion** I tell the agent what to skip, change, or add. It searches products via `korb search` / `korb favorites search` and adds them with `korb basket add`.
+4. **Review & confirm** The agent prints the full basket and a selected timeslot. After I confirm, it runs `korb checkout order`.
+5. **Clean shopping list** Ordered items get ticked off in the shopping list.
+
+In the directory that store the shopping list file I also have a claude.md explaining this process.
+The **magic** is the generated template of what I always order. Just tell an agent to use `korb orders history` to identify commonly ordered items.
+
 ## // Installation
 
 ### Binary (recommended)
@@ -73,7 +85,13 @@ korb orders delete <ORDER_ID>
 ## // Usage
 
 ```
-korb COMMAND [-p|--pretty] [-v|--version]
+Usage: korb COMMAND [-p|--pretty] [-v|--version]
+  REWE Pickup CLI
+
+Available options:
+  -p,--pretty              Pretty JSON output
+  -h,--help                Show this help text
+  -v,--version             Show version
 
 Commands:
 
@@ -96,16 +114,18 @@ Commands:
   korb timeslots                   List available pickup timeslots
 
   korb checkout                    Show the checkout for current basket. Payment is always in market.
-  korb checkout create <TIMESLOT_ID> Reserve timeslot, create checkout, and set payment to market pickup
-  korb checkout order              Confirm and place the order. Timeslot must be attached first.
+  korb checkout create <TIMESLOT_ID> Create a checkout for a given timeslot id
+  korb checkout order              Place the order. Timeslot must be attached first.
 
   korb orders                      Show open orders.
   korb orders history              Show all orders.
+  korb orders get <ORDER_ID>       Get an order (with details) by id.
   korb orders delete <ORDER_ID>    Cancel an order by order ID - will give 200 on successive calls.
 
   korb login                       Authenticate via REWE PKCE browser flow. Stores tokens in Keychain.
 
 All commands support --pretty for formatted JSON output.
+Output is JSON for agent consumption.
 ```
 
 ## // API documentation

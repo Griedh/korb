@@ -46,9 +46,10 @@ korb login --pretty
 korb store search 80336 # returns market identifier for zip code
 korb store set 420240 80336
 
-# 3. Search for products
+# 3. Search for products by name or EAN barcode
 korb search "milch" --pretty
 korb search "milch" --organic --pretty
+korb search "4305615100005" --pretty  # search by EAN barcode
 # Or browse your favorites
 korb favorites
 korb favorites search "avo"
@@ -80,7 +81,7 @@ Commands:
   korb store search <ZIP>          Find pickup stores near ZIP code
   korb store set <ID> <ZIP>        Set active store by market ID and ZIP
 
-  korb search <QUERY>              Search products in current store (use * to browse all)
+  korb search <QUERY|EAN>          Search products by name or EAN barcode (use * to browse all)
   korb search <Q> --organic        Filter by attribute (--organic, --regional, --vegan, --vegetarian)
 
   korb favorites                   Show all favorite products across all lists

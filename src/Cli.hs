@@ -116,7 +116,7 @@ searchAttributeParser =
       ]
 
 searchParser :: Parser Command
-searchParser = Search <$> argument str (metavar "QUERY") <*> searchAttributeParser
+searchParser = Search <$> argument str (metavar "QUERY|EAN") <*> searchAttributeParser
 
 loginParser :: Parser Command
 loginParser = pure Login
@@ -194,7 +194,7 @@ commandParser =
     command
       "store"
       (info storeParser (progDesc "Show current store (no args), or use 'search'/'set' subcommands"))
-      <> command "search" (info searchParser (progDesc "Search products in the current store"))
+      <> command "search" (info searchParser (progDesc "Search products by name or EAN barcode"))
       <> command
         "favorites"
         ( info
@@ -243,7 +243,7 @@ examples =
     , "  korb store search <ZIP>          Find pickup stores near ZIP code"
     , "  korb store set <ID> <ZIP>        Set active store by market ID and ZIP"
     , ""
-    , "  korb search <QUERY>              Search products in current store (use * to browse all)"
+    , "  korb search <QUERY|EAN>          Search products by name or EAN barcode (use * to browse all)"
     , "  korb search <Q> --organic        Filter by attribute (--organic, --regional, --vegan, --vegetarian)"
     , ""
     , "  korb favorites                   Show all favorite products across all lists"

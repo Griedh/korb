@@ -9,6 +9,15 @@ import Data.ByteString.Lazy qualified as BL
 import Data.Foldable (for_)
 import Data.Maybe (fromMaybe)
 import Data.Text (isInfixOf)
+import Data.Time (
+  UTCTime (..),
+  ZonedTime (..),
+  fromGregorian,
+  getCurrentTimeZone,
+  utc,
+  utcToZonedTime,
+ )
+import Data.Time.Clock (secondsToDiffTime)
 import Errors (ApiError (..))
 import Hedgehog (Gen, annotate, diff, forAll)
 import Hedgehog.Gen qualified as Gen
@@ -30,22 +39,9 @@ spec = describe "ProductApi" $ do
     listings <- forAll $ Gen.list (Range.linear 1 10) genFavList
     toQueryTitle <- forAll $ Gen.element (listings >>= \l -> (.title) <$> l.items)
     let testClient =
-          ReweAuthedApi
+          failingClient
             { getFavourites =
                 pure ReweResponse{data_ = FavoritesResponse{favoriteLists = FavoriteLists{favorites = listings}}}
-            , addFavourite = \_ _ _ -> throwE (ApiError "not implemented")
-            , deleteFavourite = \_ _ -> throwE (ApiError "not implemented")
-            , getBaseket = throwE (ApiError "not implemented")
-            , getSlots = throwE (ApiError "not implemented")
-            , addItemToBasket = \_ _ _ _ -> throwE (ApiError "not implemented")
-            , postCheckout = \_ -> throwE (ApiError "not implemented")
-            , patchCheckoutTimeslot = \_ _ _ -> throwE (ApiError "not implemented")
-            , reserveTimeslot = \_ -> throwE (ApiError "not implemented")
-            , addPayment = \_ _ -> throwE (ApiError "not implemented")
-            , confirmOrder = \_ _ -> throwE (ApiError "not implemented")
-            , postOrder = \_ -> throwE (ApiError "not implemented")
-            , getOrders = throwE (ApiError "not implemented")
-            , deleteOrder = \_ -> throwE (ApiError "not implemented")
             }
     res <- liftIO $ runExceptT $ favorites testClient (Just toQueryTitle)
     case res of
@@ -73,11 +69,8 @@ spec = describe "ProductApi" $ do
             }
         emptyBasket = mkEmptyBasket []
         testClient =
-          ReweAuthedApi
-            { getFavourites = throwE (ApiError "not implemented")
-            , addFavourite = \_ _ _ -> throwE (ApiError "not implemented")
-            , deleteFavourite = \_ _ -> throwE (ApiError "not implemented")
-            , getBaseket = pure (ReweResponse (BasketResponse emptyBasket))
+          failingClient
+            { getBaseket = pure (ReweResponse (BasketResponse emptyBasket))
             , addItemToBasket = \_ pId lqty _ -> pure (ReweResponse (BasketResponse (mkEmptyBasket [staticLineItem pId lqty])))
             }
     res <- liftIO $ runExceptT $ basketsAdd testClient item
@@ -89,6 +82,42 @@ spec = describe "ProductApi" $ do
         diff li.quantity (==) (fromMaybe 1 qty)
       Right Nothing -> fail "impossible"
       Left err -> fail (show err)
+
+  it "always adds the local timezone to timeslots" $ hedgehog $ do
+    testStartTime <- forAll getZoneTime
+    testEndTime <- forAll getZoneTime
+    localTimeZone <- liftIO getCurrentTimeZone
+    let testClient =
+          failingClient
+            { getSlots =
+                pure $
+                  ReweResponse
+                    ( TimeslotsCheckoutResponse
+                        { getTimeslotsCheckout = [Timeslot (TimeslotId "a") testStartTime testEndTime (CentPrice 22)]
+                        , freeDeliveryInfo = Nothing
+                        }
+                    )
+            }
+    res <- liftIO $ runExceptT $ slots testClient
+    case res of
+      Right TimeslotsCheckoutResponse{getTimeslotsCheckout = [slot]} -> do
+        annotate "slots times are in local timezone"
+        diff slot.startTime.zonedTimeZone (==) localTimeZone
+        diff slot.endTime.zonedTimeZone (==) localTimeZone
+      Right _ -> fail "impossible"
+      Left err -> fail (show err)
+
+-- taken from: https://github.com/hedgehogqa/haskell-hedgehog/issues/215
+getZoneTime :: Gen ZonedTime
+getZoneTime =
+  utcToZonedTime utc <$> do
+    y <- toInteger <$> Gen.int (Range.constant 2000 2019)
+    m <- Gen.int (Range.constant 1 12)
+    d <- Gen.int (Range.constant 1 28)
+    let day = fromGregorian y m d
+    secs <- toInteger <$> Gen.int (Range.constant 0 86401)
+    let timeDiff = secondsToDiffTime secs
+    pure $ UTCTime day timeDiff
 
 genFavList :: Gen FavoriteList
 genFavList = do
@@ -105,7 +134,17 @@ genProduct = do
   imageURL <- Gen.text (Range.linear 1 100) Gen.alphaNum
   orderLimit <- Gen.maybe (Gen.int (Range.linear 1 99))
   listing <- genListing
-  pure Product{articleId, productId, title, imageURL, orderLimit, listing, attributes = Nothing, itemId = Nothing}
+  pure
+    Product
+      { articleId
+      , productId
+      , title
+      , imageURL
+      , orderLimit
+      , listing
+      , attributes = Nothing
+      , itemId = Nothing
+      }
 
 genListing :: Gen Listing
 genListing = do
@@ -125,4 +164,22 @@ mkEmptyBasket items =
     , staggerings = Staggerings (Staggering (CentPrice 0) "") Nothing
     , timeSlotInformation = TimeSlotInformation Nothing Nothing ""
     , changes = Nothing
+    }
+failingClient :: ReweAuthedApi
+failingClient =
+  ReweAuthedApi
+    { getFavourites = throwE (ApiError "not implemented")
+    , addFavourite = \_ _ _ -> throwE (ApiError "not implemented")
+    , deleteFavourite = \_ _ -> throwE (ApiError "not implemented")
+    , getBaseket = throwE (ApiError "not implemented")
+    , addItemToBasket = \_ _ _ _ -> throwE (ApiError "not implemented")
+    , getSlots = throwE (ApiError "not implemented")
+    , postCheckout = \_ -> throwE (ApiError "not implemented")
+    , patchCheckoutTimeslot = \_ _ _ -> throwE (ApiError "not implemented")
+    , reserveTimeslot = \_ -> throwE (ApiError "not implemented")
+    , addPayment = \_ _ -> throwE (ApiError "not implemented")
+    , confirmOrder = \_ _ -> throwE (ApiError "not implemented")
+    , postOrder = \_ -> throwE (ApiError "not implemented")
+    , getOrders = throwE (ApiError "not implemented")
+    , deleteOrder = \_ -> throwE (ApiError "not implemented")
     }

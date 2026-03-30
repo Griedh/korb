@@ -3,12 +3,14 @@ module ReweApi where
 import Auth.Types (AccessToken (..), Auth (..))
 import Cli (WwIdent (..), ZipCode (..))
 import Control.Monad (when)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except (throwE)
 import Data.Aeson (object)
 import Data.Foldable (find)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, intercalate, isInfixOf, toLower)
 import Data.Text.Encoding (encodeUtf8)
+import Data.Time (getCurrentTimeZone, utcToZonedTime, zonedTimeToUTC)
 import Errors (ApiError (ApiError), AppError, IOE)
 import HttpClient
 import Network.HTTP.Req
@@ -158,7 +160,14 @@ basketsAdd ReweAuthedApi{getBaseket, addItemToBasket} Item{listingId, quantity} 
     $ Just addedLineItem
 
 slots :: ReweAuthedApi -> IOE ApiError TimeslotsCheckoutResponse
-slots ReweAuthedApi{getSlots} = (.data_) <$> getSlots
+slots ReweAuthedApi{getSlots} = do
+  timeslots <- (.data_) <$> getSlots
+  localTZ <- liftIO getCurrentTimeZone
+  let rezoneSlots ts =
+        ts{startTime = updateZone localTZ ts.startTime, endTime = updateZone localTZ ts.endTime, id = ts.id}
+  pure $ timeslots{getTimeslotsCheckout = rezoneSlots <$> timeslots.getTimeslotsCheckout}
+ where
+  updateZone localTz = utcToZonedTime localTz . zonedTimeToUTC
 
 checkout :: ReweAuthedApi -> IOE ApiError CheckoutResponse
 checkout api@ReweAuthedApi{postCheckout} = do

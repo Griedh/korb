@@ -9,6 +9,7 @@ import Data.Aeson (
   genericParseJSON,
  )
 import Data.Text (Text, pack, toLower)
+import Data.Time (ZonedTime)
 import GHC.Generics (Generic)
 
 -- Shared primitives
@@ -263,7 +264,7 @@ data CheckoutInfo = CheckoutInfo
   , timeslot :: Maybe Timeslot
   , payment :: Maybe CheckoutPayment
   }
-  deriving stock (Generic, Show, Eq)
+  deriving stock (Generic, Show)
 instance FromJSON CheckoutInfo
 instance ToJSON CheckoutInfo
 
@@ -280,7 +281,7 @@ data CheckoutResponse = CheckoutResponse
   { checkout :: CheckoutInfo
   , basket :: CheckoutBasketSummary
   }
-  deriving stock (Generic, Show, Eq)
+  deriving stock (Generic, Show)
 instance FromJSON CheckoutResponse
 instance ToJSON CheckoutResponse
 
@@ -370,11 +371,11 @@ instance ToJSON TimeslotId
 
 data Timeslot = Timeslot
   { id :: TimeslotId
-  , startTime :: Text
-  , endTime :: Text
+  , startTime :: ZonedTime
+  , endTime :: ZonedTime
   , serviceFee :: CentPrice
   }
-  deriving stock (Generic, Show, Eq)
+  deriving stock (Generic, Show)
 instance FromJSON Timeslot
 instance ToJSON Timeslot
 
@@ -389,7 +390,7 @@ data TimeslotsCheckoutResponse = TimeslotsCheckoutResponse
   { getTimeslotsCheckout :: [Timeslot]
   , freeDeliveryInfo :: Maybe FreeDeliveryInfo
   }
-  deriving stock (Generic, Show, Eq)
+  deriving stock (Generic, Show)
 instance FromJSON TimeslotsCheckoutResponse
 instance ToJSON TimeslotsCheckoutResponse
 

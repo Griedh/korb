@@ -157,6 +157,7 @@ test-suite korb-test
 
     -- Test dependencies.
     build-depends:
+        time,
         base,
         korb,
         hspec,

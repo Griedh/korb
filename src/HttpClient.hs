@@ -21,9 +21,11 @@ data HttpClient = HttpClient
   { get :: forall res. (FromJSON res) => Url 'Https -> Option 'Https -> IOE ApiError res
   , delete :: forall res. (FromJSON res) => Url 'Https -> Option 'Https -> IOE ApiError res
   , post ::
-      forall res req. (FromJSON res, ToJSON req) => req -> Url 'Https -> Option 'Https -> IOE ApiError res
+      forall res req.
+      (FromJSON res, ToJSON req) => req -> Url 'Https -> Option 'Https -> IOE ApiError res
   , patch ::
-      forall res req. (FromJSON res, ToJSON req) => req -> Url 'Https -> Option 'Https -> IOE ApiError res
+      forall res req.
+      (FromJSON res, ToJSON req) => req -> Url 'Https -> Option 'Https -> IOE ApiError res
   , urlFromEncodedPost ::
       forall res. (FromJSON res) => FormUrlEncodedParam -> Url 'Https -> IOE ApiError res
   , getBytes ::
@@ -73,7 +75,9 @@ decodeResponse :: (FromJSON res, Show a) => a -> BsResponse -> IOE ApiError res
 decodeResponse reqName response =
   case eitherDecodeStrict (responseBody response) of
     Right res -> pure res
-    Left _ -> throwE $ ApiError (pack (Prelude.show reqName) <> " - " <> decodeUtf8 (responseBody response))
+    Left _ ->
+      throwE $
+        ApiError (pack (Prelude.show reqName) <> " - " <> decodeUtf8 (responseBody response))
 
 stealthHeaders :: Option 'Https
 stealthHeaders =
@@ -85,7 +89,8 @@ stealthHeaders =
     <> header "accept" "*/*"
     <> header "priority" "u=3"
 
-deleteRewe :: (FromJSON res) => HttpConfig -> Url 'Https -> Option 'Https -> IOE ApiError res
+deleteRewe ::
+  (FromJSON res) => HttpConfig -> Url 'Https -> Option 'Https -> IOE ApiError res
 deleteRewe config url options =
   decodeResponse url
     =<< runReq config (req DELETE url NoReqBody bsResponse (options <> stealthHeaders))
@@ -97,21 +102,25 @@ getRewe config url options =
 
 getReweRaw :: HttpConfig -> Url 'Https -> Option 'Https -> IOE ApiError ByteString
 getReweRaw config url options =
-  responseBody <$> runReq config (req GET url NoReqBody bsResponse (options <> stealthHeaders))
+  responseBody
+    <$> runReq config (req GET url NoReqBody bsResponse (options <> stealthHeaders))
 
 urlFormEncodeRewe ::
   (FromJSON res) => HttpConfig -> FormUrlEncodedParam -> Url 'Https -> IOE ApiError res
 urlFormEncodeRewe config body url =
-  decodeResponse url =<< runReq config (req POST url (ReqBodyUrlEnc body) bsResponse stealthHeaders)
+  decodeResponse url
+    =<< runReq config (req POST url (ReqBodyUrlEnc body) bsResponse stealthHeaders)
 
 postRewe ::
-  (FromJSON res, ToJSON req) => HttpConfig -> req -> Url 'Https -> Option 'Https -> IOE ApiError res
+  (FromJSON res, ToJSON req) =>
+  HttpConfig -> req -> Url 'Https -> Option 'Https -> IOE ApiError res
 postRewe config body url options =
   decodeResponse url
     =<< runReq config (req POST url (ReqBodyJson body) bsResponse (options <> stealthHeaders))
 
 patchRewe ::
-  (FromJSON res, ToJSON req) => HttpConfig -> req -> Url 'Https -> Option 'Https -> IOE ApiError res
+  (FromJSON res, ToJSON req) =>
+  HttpConfig -> req -> Url 'Https -> Option 'Https -> IOE ApiError res
 patchRewe config body url options =
   decodeResponse url
     =<< runReq config (req PATCH url (ReqBodyJson body) bsResponse (options <> stealthHeaders))

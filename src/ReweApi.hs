@@ -34,12 +34,19 @@ newtype ObjectsPerPage = ObjectsPerPage Int
 data ReweAuthedApi = ReweAuthedApi
   { getFavourites :: IOE ApiError (ReweResponse FavoritesResponse)
   , addFavourite ::
-      FavoriteListId -> ListingId -> ProductId -> IOE ApiError (ReweResponse AddFavoriteResponse)
+      FavoriteListId ->
+      ListingId ->
+      ProductId ->
+      IOE ApiError (ReweResponse AddFavoriteResponse)
   , deleteFavourite :: FavoriteListId -> ItemId -> IOE ApiError ()
   , getBaseket :: IOE ApiError (ReweResponse BasketResponse)
   , getSlots :: IOE ApiError (ReweResponse TimeslotsCheckoutResponse)
   , addItemToBasket ::
-      BasketId -> ListingId -> Qty -> BasketVersion -> IOE ApiError (ReweResponse BasketResponse)
+      BasketId ->
+      ListingId ->
+      Qty ->
+      BasketVersion ->
+      IOE ApiError (ReweResponse BasketResponse)
   , postCheckout :: BasketId -> IOE ApiError (ReweResponse CheckoutResponse)
   , patchCheckoutTimeslot ::
       BasketId -> CheckoutId -> TimeslotId -> IOE ApiError (ReweResponse CheckoutResponse)
@@ -109,7 +116,11 @@ mkReweAuthedClient (HttpClient{get, post, delete, patch, getBytes}) auth (Curren
             (PatchTimeslotReq basketId timeslotId)
             (apiBase /: "checkouts" /: checkoutId /: "timeslots")
             mandatoryHeaders
-      , reserveTimeslot = \timeslotId -> post (ReserveTimeslotReq timeslotId) (apiBase /: "timeslots" /: "reservations") mandatoryHeaders
+      , reserveTimeslot = \timeslotId ->
+          post
+            (ReserveTimeslotReq timeslotId)
+            (apiBase /: "timeslots" /: "reservations")
+            mandatoryHeaders
       , addPayment = \basketId (CheckoutId checkoutId) ->
           patch
             (PatchPaymentReq basketId MarketPayment)
@@ -175,7 +186,11 @@ basketsAdd ReweAuthedApi{getBaseket, addItemToBasket} Item{listingId, quantity} 
   reweResponse <- getBaseket
   let currentBasket = reweResponse.data_.basket
   reweRes <-
-    addItemToBasket currentBasket.id listingId (fromMaybe (Qty 1) quantity) currentBasket.version
+    addItemToBasket
+      currentBasket.id
+      listingId
+      (fromMaybe (Qty 1) quantity)
+      currentBasket.version
   let wasDelete = any (\(Qty q) -> q <= 0) quantity
   let addedLineItem =
         find (\li -> li.product.listing.listingId == listingId) reweRes.data_.basket.lineItems
@@ -189,10 +204,14 @@ slots ReweAuthedApi{getSlots} = do
   timeslots <- (.data_) <$> getSlots
   localTZ <- liftIO getCurrentTimeZone
   let rezoneSlots ts =
-        ts{startTime = updateZone localTZ ts.startTime, endTime = updateZone localTZ ts.endTime, id = ts.id}
+        ts
+          { startTime = updateZone localTZ ts.startTime
+          , endTime = updateZone localTZ ts.endTime
+          , id = ts.id
+          }
   pure $ timeslots{getTimeslotsCheckout = rezoneSlots <$> timeslots.getTimeslotsCheckout}
- where
-  updateZone localTz = utcToZonedTime localTz . zonedTimeToUTC
+  where
+    updateZone localTz = utcToZonedTime localTz . zonedTimeToUTC
 
 checkout :: ReweAuthedApi -> IOE ApiError CheckoutResponse
 checkout api@ReweAuthedApi{postCheckout} = do
@@ -205,7 +224,8 @@ checkoutTimeslot :: ReweAuthedApi -> TimeslotId -> IOE ApiError CheckoutResponse
 checkoutTimeslot api@ReweAuthedApi{patchCheckoutTimeslot, reserveTimeslot = reserve, addPayment} timeslot = do
   co <- checkout api
   reservedTimeslot <- (.data_.createTimeslotReservation) <$> reserve timeslot
-  _ <- (.data_) <$> patchCheckoutTimeslot co.basket.id co.checkout.id reservedTimeslot.slotId
+  _ <-
+    (.data_) <$> patchCheckoutTimeslot co.basket.id co.checkout.id reservedTimeslot.slotId
   (.data_) <$> addPayment co.basket.id co.checkout.id
 
 orderCheckout :: ReweAuthedApi -> IOE ApiError OrderResponse
@@ -220,8 +240,11 @@ getOpenOrders :: ReweAuthedApi -> IOE ApiError [OrderHistoryEntry]
 getOpenOrders api = do
   orders <- getOrderHistory api
   pure $ filter isActionable orders
- where
-  isActionable order = any (\sub -> sub.isOpen && any (`elem` ["modify", "cancel"]) sub.orderActions) order.subOrders
+  where
+    isActionable order =
+      any
+        (\sub -> sub.isOpen && any (`elem` ["modify", "cancel"]) sub.orderActions)
+        order.subOrders
 
 getOrderHistory :: ReweAuthedApi -> IOE ApiError [OrderHistoryEntry]
 getOrderHistory ReweAuthedApi{getOrders} = (.data_.orderHistory.orders) <$> getOrders Nothing
@@ -241,7 +264,8 @@ ebonReceipt ReweAuthedApi{getReceipt} ebonId filePath = do
   liftIOE (AppFileError . FileError) $ BS.writeFile filePath pdfBytes
   pure $ "Stored receipt to: " <> pack filePath
 
-thresholdSuggestion :: ReweAuthedApi -> NumberOfSuggestions -> IOE ApiError SuggestionResponse
+thresholdSuggestion ::
+  ReweAuthedApi -> NumberOfSuggestions -> IOE ApiError SuggestionResponse
 thresholdSuggestion api@ReweAuthedApi{getPurchasedProducts, getOrders} (NumberOfSuggestions numSuggest) = do
   oldOrderEntries <- (.data_.orderHistory.orders) <$> getOrders (Just $ ObjectsPerPage 10) -- limit to max 10 orders
   orderedProductIds <- concat <$> forM oldOrderEntries fetchActualOrder
@@ -249,13 +273,15 @@ thresholdSuggestion api@ReweAuthedApi{getPurchasedProducts, getOrders} (NumberOf
   purchasedProducts <- (.data_.purchasedProducts.products) <$> getPurchasedProducts
   -- filters to at least once bought items
   let purchasableWithFrequency =
-        mapMaybe (\p -> Suggestion p <$> Map.lookup p.productId productOrderFrequencies) purchasedProducts
+        mapMaybe
+          (\p -> Suggestion p <$> Map.lookup p.productId productOrderFrequencies)
+          purchasedProducts
   currentBasket <- basket api
   let purchasedNotInBasket = filter (notInBasket currentBasket) purchasableWithFrequency
       remainingPrice = maybe (CentPrice 0) (.remainingArticlePrice) currentBasket.staggerings.nextStaggering
       sortedByFreq = take numSuggest $ sortOn (Down . (.freq)) purchasedNotInBasket
   pure $ SuggestionResponse sortedByFreq remainingPrice
- where
-  fetchActualOrder ordHist = productIdsFromOrder <$> getOneOrder api ordHist.orderId
-  productIdsFromOrder order = mapMaybe (.productId) (order.subOrders >>= (.lineItems))
-  notInBasket b suggestion = all (\li -> li.product.productId /= suggestion.product.productId) b.lineItems
+  where
+    fetchActualOrder ordHist = productIdsFromOrder <$> getOneOrder api ordHist.orderId
+    productIdsFromOrder order = mapMaybe (.productId) (order.subOrders >>= (.lineItems))
+    notInBasket b suggestion = all (\li -> li.product.productId /= suggestion.product.productId) b.lineItems

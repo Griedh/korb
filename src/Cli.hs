@@ -58,10 +58,10 @@ favoritesAddParser =
 
 uuidArg :: (Text -> a) -> String -> String -> Parser a
 uuidArg wrap metaName errMsg = argument (eitherReader parse) (metavar metaName)
- where
-  parse s = case UUID.fromString s of
-    Just _ -> Right (wrap (pack s))
-    Nothing -> Left errMsg
+  where
+    parse s = case UUID.fromString s of
+      Just _ -> Right (wrap (pack s))
+      Nothing -> Left errMsg
 
 favoritesRemoveParser :: Parser FavoritesCommand
 favoritesRemoveParser =
@@ -148,7 +148,10 @@ suggestionParser =
 checkoutStartParser :: Parser CheckoutCommand
 checkoutStartParser =
   StartCheckout
-    <$> uuidArg TimeslotId "TIMESLOT_ID" "Invalid timeslot ID (expected UUID, get IDs from korb timeslots)"
+    <$> uuidArg
+      TimeslotId
+      "TIMESLOT_ID"
+      "Invalid timeslot ID (expected UUID, get IDs from korb timeslots)"
 
 checkoutParser :: Parser Command
 checkoutParser =
@@ -175,7 +178,9 @@ ebonDownloadParser =
   ( EbonDownload . EbonId
       <$> argument str (metavar "EBON_ID")
   )
-    <*> option str (long "output" <> help "Output file path" <> metavar "FILE" <> value "ebon.pdf")
+    <*> option
+      str
+      (long "output" <> help "Output file path" <> metavar "FILE" <> value "ebon.pdf")
 
 ebonParser :: Parser Command
 ebonParser =
@@ -247,7 +252,10 @@ commandParser =
   hsubparser $
     command
       "store"
-      (info storeParser (progDesc "Show current store (no args), or use 'search'/'set' subcommands"))
+      ( info
+          storeParser
+          (progDesc "Show current store (no args), or use 'search'/'set' subcommands")
+      )
       <> command "search" (info searchParser (progDesc "Search products by name or EAN barcode"))
       <> command
         "favorites"
@@ -264,7 +272,10 @@ commandParser =
         (info basketParser (progDesc "Show current basket (no args), or use 'add' subcommand"))
       <> command
         "ebons"
-        (info ebonParser (progDesc "Show the ebons (no args), or use 'download' subcommand to get the pdf."))
+        ( info
+            ebonParser
+            (progDesc "Show the ebons (no args), or use 'download' subcommand to get the pdf.")
+        )
       <> command
         "suggestion"
         ( info
@@ -279,10 +290,16 @@ commandParser =
         )
       <> command
         "orders"
-        (info orderParser (progDesc "Show open orders (no args), or use 'delete'/'history' subcommand"))
+        ( info
+            orderParser
+            (progDesc "Show open orders (no args), or use 'delete'/'history' subcommand")
+        )
 
 versionOption :: Parser (a -> a)
-versionOption = infoOption ("korb " <> showVersion version) (long "version" <> short 'v' <> help "Show version")
+versionOption =
+  infoOption
+    ("korb " <> showVersion version)
+    (long "version" <> short 'v' <> help "Show version")
 
 prettyOutput :: Parser Bool
 prettyOutput = switch (long "pretty" <> short 'p' <> help "Pretty JSON output")

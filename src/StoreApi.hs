@@ -14,8 +14,8 @@ import ReweApi.Types (ReweResponse (..))
 
 printValue :: (ToJSON a) => Bool -> a -> IOE e ()
 printValue pretty value = liftIO $ BL.putStrLn (encodeIt value)
- where
-  encodeIt = if pretty then encodePretty else encode
+  where
+    encodeIt = if pretty then encodePretty else encode
 
 data PickupMarket = PickupMarket
   { wwIdent :: Text
@@ -27,7 +27,8 @@ data PickupMarket = PickupMarket
     pickupType :: Text
   }
   deriving stock (Show, Generic, Eq)
-newtype Portfolio = Portfolio {pickupMarkets :: [PickupMarket]} deriving stock (Show, Generic)
+newtype Portfolio = Portfolio {pickupMarkets :: [PickupMarket]}
+  deriving stock (Show, Generic)
 newtype ServiceArea = ServiceArea {servicePortfolio :: Maybe Portfolio}
   deriving stock (Show, Generic)
 

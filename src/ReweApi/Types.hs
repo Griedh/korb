@@ -65,11 +65,13 @@ instance FromJSON Product
 
 -- Search (GET /products)
 
-data SearchAttribute = Organic | Regional | Vegan | Vegetarian deriving stock (Generic, Show, Eq)
+data SearchAttribute = Organic | Regional | Vegan | Vegetarian
+  deriving stock (Generic, Show, Eq)
 attributeToText :: SearchAttribute -> Text
 attributeToText = toLower . pack . show
 
-newtype SearchProducts = SearchProducts {products :: [Product]} deriving stock (Generic, Show, Eq)
+newtype SearchProducts = SearchProducts {products :: [Product]}
+  deriving stock (Generic, Show, Eq)
 instance ToJSON SearchProducts
 instance FromJSON SearchProducts
 
@@ -518,4 +520,6 @@ instance ToJSON SuggestionResponse
 
 newtype ReweResponse a = ReweResponse {data_ :: a} deriving stock (Show, Generic)
 instance (FromJSON a) => FromJSON (ReweResponse a) where
-  parseJSON = genericParseJSON defaultOptions{fieldLabelModifier = \f -> if f == "data_" then "data" else f}
+  parseJSON =
+    genericParseJSON
+      defaultOptions{fieldLabelModifier = \f -> if f == "data_" then "data" else f}

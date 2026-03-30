@@ -5,7 +5,11 @@ import Data.Aeson
 import Data.Text.IO qualified as TIO
 import Errors
 import GHC.Generics
-import System.Directory (XdgDirectory (XdgConfig), createDirectoryIfMissing, getXdgDirectory)
+import System.Directory (
+  XdgDirectory (XdgConfig),
+  createDirectoryIfMissing,
+  getXdgDirectory,
+ )
 import System.FilePath ((</>))
 
 configDir :: IO FilePath

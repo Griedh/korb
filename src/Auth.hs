@@ -33,7 +33,11 @@ readToken tknKind = do
   (exitCode, stdout, _) <-
     liftIOE
       AuthError
-      (readProcessWithExitCode "security" ["find-generic-password", "-s", "korb", "-a", tknKind, "-w"] "")
+      ( readProcessWithExitCode
+          "security"
+          ["find-generic-password", "-s", "korb", "-a", tknKind, "-w"]
+          ""
+      )
   case exitCode of
     ExitSuccess -> pure $ strip (pack stdout)
     ExitFailure _ -> throwE NoTokenError
@@ -82,7 +86,8 @@ extractCodeFromRedirect redirect =
     [_, code] -> Right (AuthCode code)
     _ ->
       Left $
-        AuthError "No auth code in redirect found - retry flow - make sure 'de.rewe.app..' is correct"
+        AuthError
+          "No auth code in redirect found - retry flow - make sure 'de.rewe.app..' is correct"
 
 reweFormEncodedBody :: AuthCode -> PKCEVerifier -> FormUrlEncodedParam
 reweFormEncodedBody (AuthCode code) (PKCEVerifier verifier) =

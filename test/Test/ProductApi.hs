@@ -41,7 +41,10 @@ spec = describe "ProductApi" $ do
     let testClient =
           failingClient
             { getFavourites =
-                pure ReweResponse{data_ = FavoritesResponse{favoriteLists = FavoriteLists{favorites = listings}}}
+                pure
+                  ReweResponse
+                    { data_ = FavoritesResponse{favoriteLists = FavoriteLists{favorites = listings}}
+                    }
             }
     res <- liftIO $ runExceptT $ favorites testClient (Just toQueryTitle)
     case res of
@@ -93,7 +96,8 @@ spec = describe "ProductApi" $ do
                 pure $
                   ReweResponse
                     ( TimeslotsCheckoutResponse
-                        { getTimeslotsCheckout = [Timeslot (TimeslotId "a") testStartTime testEndTime (CentPrice 22)]
+                        { getTimeslotsCheckout =
+                            [Timeslot (TimeslotId "a") testStartTime testEndTime (CentPrice 22)]
                         , freeDeliveryInfo = Nothing
                         }
                     )
@@ -180,7 +184,7 @@ failingClient =
     , addPayment = \_ _ -> throwE (ApiError "not implemented")
     , confirmOrder = \_ _ -> throwE (ApiError "not implemented")
     , postOrder = \_ -> throwE (ApiError "not implemented")
-    , getOrders = throwE (ApiError "not implemented")
+    , getOrders = \_ -> throwE (ApiError "not implemented")
     , getOrder = \_ -> throwE (ApiError "not implemented")
     , deleteOrder = \_ -> throwE (ApiError "not implemented")
     , getEbons = throwE (ApiError "not implemented")

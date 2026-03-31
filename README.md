@@ -30,12 +30,6 @@ curl -L https://github.com/yannick-cw/korb/releases/latest/download/korb-aarch64
 chmod +x korb
 mv korb /usr/local/bin/
 
-# Linux (x86_64)
-curl -L https://github.com/yannick-cw/korb/releases/latest/download/korb-x86_64-linux -o korb
-chmod +x korb
-sudo mv korb /usr/local/bin/
-```
-
 ### From source
 
 Requires GHC 9.12+ and Cabal. You also need the REWE mTLS client certificates.

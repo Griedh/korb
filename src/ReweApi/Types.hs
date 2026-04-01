@@ -23,7 +23,7 @@ newtype CentPrice = CentPrice Int
 instance FromJSON CentPrice
 instance ToJSON CentPrice
 
-newtype ListingId = ListingId Text deriving stock (Generic, Show, Eq, Read)
+newtype ListingId = ListingId Text deriving stock (Generic, Show, Eq)
 instance FromJSON ListingId
 instance ToJSON ListingId
 

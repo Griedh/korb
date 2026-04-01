@@ -34,6 +34,13 @@ jobs:
           curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y
           echo "$HOME/.elan/bin" >> $GITHUB_PATH
 
+      - name: Cache Lean
+        uses: actions/cache@v4
+        with:
+          path: ~/.elan
+          key: lean-${{ hashFiles('leanKorb/lean-toolchain') }}
+          restore-keys: lean-
+
       - name: Build Lean binary
         run: |
           cd leanKorb

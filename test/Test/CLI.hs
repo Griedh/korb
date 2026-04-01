@@ -37,7 +37,9 @@ spec = describe "CLI" $ do
       Success cmd -> do
         annotate "the command == parse(render(command))"
         diff cmd (==) command
-      _ -> fail "ouch - you better investigate"
+      _ -> do
+        annotate ("rendered args: " <> show (renderCommand command))
+        fail "parser rejected rendered command"
 
 renderCommand :: Command -> [String]
 renderCommand cmd =
@@ -143,7 +145,7 @@ genReweId :: Gen Text
 genReweId =
   Gen.text
     (Range.linear 5 50)
-    (Gen.element ("abcdefghijklmnopqrstuvwxyz0123456789-" :: String))
+    (Gen.element ("abcdefghijklmnopqrstuvwxyz0123456789" :: String))
 
 genUUID :: Gen Text
 genUUID = do

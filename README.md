@@ -27,8 +27,19 @@ Download the latest release from [GitHub Releases](https://github.com/yannick-cw
 ```bash
 # macOS (Apple Silicon)
 curl -L https://github.com/yannick-cw/korb/releases/latest/download/korb-aarch64-macos -o korb
+
+# macOS (Intel)
+curl -L https://github.com/yannick-cw/korb/releases/latest/download/korb-x86_64-macos -o korb
+
+# Linux (x86_64)
+curl -L https://github.com/yannick-cw/korb/releases/latest/download/korb-x86_64-linux -o korb
+```
+
+Then:
+```bash
 chmod +x korb
-mv korb /usr/local/bin/
+mv korb /usr/local/bin/   # or sudo mv on Linux
+```
 
 ### From source
 

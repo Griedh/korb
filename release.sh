@@ -30,8 +30,8 @@ git add korb.cabal
 git commit -m "Release ${TAG}"
 git push origin main
 
-echo "=== Creating GitHub release (creates tag, uploads macOS binary) ==="
-echo "=== Linux binary will be built and uploaded by GitHub Actions ==="
+echo "=== Creating GitHub release (creates tag, uploads macOS ARM binary) ==="
+echo "=== Linux + macOS Intel binaries will be built by GitHub Actions ==="
 gh release create "${TAG}" "${MACOS_BINARY}" \
   --title "${TAG}" \
   --target main \
@@ -39,4 +39,4 @@ gh release create "${TAG}" "${MACOS_BINARY}" \
 
 rm "${MACOS_BINARY}"
 echo "=== Done: ${TAG} ==="
-echo "Linux binary will appear on the release once the GitHub Action completes."
+echo "Linux + macOS Intel binaries will appear on the release once GitHub Actions complete."

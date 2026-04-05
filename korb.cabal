@@ -93,6 +93,7 @@ library
         containers,
         file-embed,
         http-client,
+        http-types,
         time,
         base64-bytestring,
         ram,

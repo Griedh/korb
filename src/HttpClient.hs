@@ -18,6 +18,7 @@ import Data.FileEmbed (embedFile)
 import Data.Text (Text, intercalate, pack, unpack)
 import Data.Text qualified as TIO
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Network.HTTP.Types.URI (urlEncode)
 import Errors (
   ApiError (ApiError),
   AppError,
@@ -116,7 +117,10 @@ buildUrl (ApiUrl base) [] = base
 buildUrl (ApiUrl base) qps = base <> "?" <> buildParams qps
 
 buildParams :: QueryParams -> Text
-buildParams qps = intercalate "&" ((\(k, v) -> k <> "=" <> v) <$> qps)
+buildParams qps = intercalate "&" ((\(k, v) -> k <> "=" <> encodeParam v) <$> qps)
+
+encodeParam :: Text -> Text
+encodeParam = decodeUtf8 . urlEncode True . encodeUtf8
 
 headersToArgs :: [(Text, Text)] -> [Text]
 headersToArgs = concatMap (\(k, v) -> ["-H", k <> ": " <> v])

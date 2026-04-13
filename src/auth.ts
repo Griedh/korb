@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { AuthError, TokenReadError } from './errors.js';
 import type { HttpClient } from './http-client.js';
-import type { TokenResponse } from './types/auth.js';
+import { expPayloadSchema, tokenResponseSchema } from './types/auth.js';
 
 const tokenEndpoint = 'https://account.rewe.de/realms/sso/protocol/openid-connect/token';
 const tokenDir = () => join(process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config'), 'korb', 'tokens');
@@ -53,7 +53,7 @@ const extractCodeFromRedirect = (redirect: string): string => {
 const decodeJWTExp = (jwt: string): number => {
   const parts = jwt.split('.');
   if (parts.length < 2) throw new AuthError("Access token in wrong format - try 'korb login' again");
-  const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')) as { exp: number };
+  const payload = expPayloadSchema.parse(JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')));
   return payload.exp;
 };
 
@@ -63,7 +63,7 @@ export const mkAuth = (store: TokenStore, http: HttpClient) => ({
     const exp = decodeJWTExp(access);
     const now = Math.floor(Date.now() / 1000);
     if (now < exp - 30) return access;
-    const refreshed = http.urlFromEncodedPost<TokenResponse>({ grant_type: 'refresh_token', client_id: 'reweios', refresh_token: store.readRefresh() }, tokenEndpoint);
+    const refreshed = tokenResponseSchema.parse(http.urlFromEncodedPost({ grant_type: 'refresh_token', client_id: 'reweios', refresh_token: store.readRefresh() }, tokenEndpoint));
     store.storeAccess(refreshed.access_token);
     store.storeRefresh(refreshed.refresh_token);
     return refreshed.access_token;
@@ -75,9 +75,9 @@ export const mkAuth = (store: TokenStore, http: HttpClient) => ({
     console.log('\n2. Log in and paste de.rewe.app://redirect?... URL:');
     const redirect = readFileSync(0, 'utf8').trim();
     const code = extractCodeFromRedirect(redirect);
-    const tkn = http.urlFromEncodedPost<TokenResponse>({
+    const tkn = tokenResponseSchema.parse(http.urlFromEncodedPost({
       grant_type: 'authorization_code', client_id: 'reweios', code, redirect_uri: 'de.rewe.app://redirect', code_verifier: verifier
-    }, tokenEndpoint);
+    }, tokenEndpoint));
     store.storeAccess(tkn.access_token);
     store.storeRefresh(tkn.refresh_token);
     return 'Login succeeded, tokens stored';

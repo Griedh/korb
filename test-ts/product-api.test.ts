@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { suggestionEngine } from '../src/rewe-api.js';
-import type { SearchProducts } from '../src/types/rewe.js';
+import { searchProductsSchema } from '../src/types/rewe.js';
 
 describe('ProductApi', () => {
   it('decodes search response fixture', () => {
-    const json = JSON.parse(readFileSync('./test/search_response.json', 'utf8')) as SearchProducts;
+    const json = searchProductsSchema.parse(JSON.parse(readFileSync('./test/search_response.json', 'utf8')));
     expect(json.products.length).toBe(14);
   });
 

@@ -3,7 +3,7 @@ set -euo pipefail
 
 VERSION="${1:?Usage: ./release.sh <version> (e.g. 0.2.0)}"
 TAG="v${VERSION}"
-MACOS_BINARY="korb-aarch64-macos"
+ARTIFACT="korb-${VERSION}.tgz"
 
 if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
   echo "Error: tag ${TAG} already exists on remote"
@@ -15,28 +15,22 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
-echo "=== Updating version in korb.cabal ==="
-sed -i '' "s/^version:.*$/version:            ${VERSION}.0/" korb.cabal
+npm version --no-git-tag-version "${VERSION}"
+npm ci
+npm run build
+npm pack --pack-destination .
 
-echo "=== Building macOS binary ==="
-cabal build
-BUILT=$(cabal list-bin korb)
-cp "${BUILT}" "${MACOS_BINARY}"
-strip "${MACOS_BINARY}"
-echo "macOS binary: ${MACOS_BINARY} ($(du -h "${MACOS_BINARY}" | cut -f1))"
+mv korb-*.tgz "${ARTIFACT}" || true
 
-echo "=== Committing and pushing ==="
-git add korb.cabal
-git commit -m "Release ${TAG}"
+git add package.json
+if git diff --cached --quiet; then
+  echo "No version changes to commit."
+else
+  git commit -m "Release ${TAG}"
+fi
+
 git push origin main
 
-echo "=== Creating GitHub release (creates tag, uploads macOS ARM binary) ==="
-echo "=== Linux + macOS Intel binaries will be built by GitHub Actions ==="
-gh release create "${TAG}" "${MACOS_BINARY}" \
-  --title "${TAG}" \
-  --target main \
-  --generate-notes
+gh release create "${TAG}" "${ARTIFACT}" --title "${TAG}" --target main --generate-notes
 
-rm "${MACOS_BINARY}"
-echo "=== Done: ${TAG} ==="
-echo "Linux + macOS Intel binaries will appear on the release once GitHub Actions complete."
+echo "Done: ${TAG}"

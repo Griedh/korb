@@ -45,8 +45,8 @@ const main = () => {
       default: throw new Error('Unknown command');
     }
   } catch (error) {
-    if (error instanceof FileReadError) console.error('It seems like you have not yet set a store - run korb store set');
-    else if (error instanceof TokenReadError) console.error("No access token found - run 'korb login' first");
+    if (error instanceof FileReadError) console.error('It seems like you have not yet set a store - run reweCart store set');
+    else if (error instanceof TokenReadError) console.error("No access token found - run 'reweCart login' first");
     else console.error(error);
     process.exitCode = 1;
   }

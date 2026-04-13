@@ -47,6 +47,28 @@ export const buildCli = () => {
   ebons.command('download').argument('<EBON_ID>').option('--output <FILE>', 'Output file path', 'ebon.pdf').action((id, opts) => setCmd(program, { type: 'EbonDownload', ebonId: id, file: opts.output }));
   ebons.action(() => setCmd(program, { type: 'EbonShow' }));
 
+
+  const scheduler = program.command('scheduler').description('Automate checkout at a configured time.');
+  scheduler
+    .command('start')
+    .option('--schedule-day <DAY>', 'Weekday to run (sun..sat)', 'sat')
+    .option('--schedule-time <HH:MM>', 'Time to trigger the scheduler', '12:05')
+    .option('--target-day <DAY>', 'Weekday to book for (sun..sat)', 'fri')
+    .option('--weeks-ahead <N>', 'How many weeks ahead to book', '2')
+    .option('--window <HH:MM-HH:MM>', 'Pickup window to target', '18:00-20:00')
+    .option('--once', 'Execute only once and exit')
+    .action((opts) => setCmd(program, {
+      type: 'SchedulerStart',
+      config: {
+        scheduleWeekday: opts.scheduleDay,
+        scheduleTime: opts.scheduleTime,
+        targetWeekday: opts.targetDay,
+        weeksAhead: Number(opts.weeksAhead),
+        pickupWindow: opts.window
+      },
+      once: !!opts.once
+    }));
+
   const suggestion = program.command('suggestion');
   suggestion.command('threshold').argument('<NUM_SUGGESTIONS>').action((n) => setCmd(program, { type: 'ThresholdSuggestion', num: Number(n) }));
 

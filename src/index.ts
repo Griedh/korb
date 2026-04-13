@@ -3,6 +3,7 @@ import { parseInput } from './cli.js';
 import { ApiError, FileReadError, TokenReadError } from './errors.js';
 import { HttpClient } from './http-client.js';
 import { mkReweAuthedClient, searchRewe } from './rewe-api.js';
+import { parseSchedulerConfig, startScheduler } from './scheduler.js';
 import { readSettings, writeSettings } from './storage.js';
 import { printValue, searchForStores, storeExists } from './store-api.js';
 
@@ -42,6 +43,11 @@ const main = () => {
       case 'GetOrder': return printValue(pretty, client.getOneOrder(cmd.orderId));
       case 'EbonShow': return printValue(pretty, client.ebons());
       case 'ThresholdSuggestion': return printValue(pretty, client.thresholdSuggestion(cmd.num));
+      case 'SchedulerStart': {
+        const parsed = parseSchedulerConfig(cmd.config);
+        startScheduler(client, parsed, cmd.once);
+        return printValue(pretty, { started: true, once: cmd.once, config: parsed });
+      }
       default: throw new Error('Unknown command');
     }
   } catch (error) {

@@ -17,6 +17,19 @@ npm start -- <command>
 node dist/index.js <command>
 ```
 
+
+Minimal UI (Preact):
+
+```bash
+npm run ui:dev
+```
+
+Build UI:
+
+```bash
+npm run ui:build
+```
+
 Run tests:
 
 ```bash
@@ -40,7 +53,12 @@ reweCart basket add <LISTING_ID> --qty 1
 reweCart timeslots
 reweCart checkout create <TIMESLOT_ID>
 reweCart checkout order
+
+reweCart scheduler start --schedule-day sat --schedule-time 12:05 --target-day fri --weeks-ahead 2 --window 18:00-20:00 --once
 ```
+
+For continuous automation, omit `--once` and keep the process running.
+
 
 ## API schemas
 

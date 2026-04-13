@@ -18,3 +18,5 @@ curriculum.md
 .claude/
 dist/
 korb-aarch64-macos
+
+node_modules/

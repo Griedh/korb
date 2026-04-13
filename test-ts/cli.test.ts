@@ -16,4 +16,35 @@ describe('CLI', () => {
     const out = parseInput(['node', 'reweCart', 'checkout', 'create', '123e4567-e89b-12d3-a456-426614174000']);
     expect(out.cmd.type).toBe('StartCheckout');
   });
+
+  it('parses scheduler command', () => {
+    const out = parseInput([
+      'node',
+      'reweCart',
+      'scheduler',
+      'start',
+      '--schedule-day',
+      'sat',
+      '--schedule-time',
+      '12:05',
+      '--target-day',
+      'fri',
+      '--weeks-ahead',
+      '2',
+      '--window',
+      '18:00-20:00',
+      '--once'
+    ]);
+    expect(out.cmd).toEqual({
+      type: 'SchedulerStart',
+      config: {
+        scheduleWeekday: 'sat',
+        scheduleTime: '12:05',
+        targetWeekday: 'fri',
+        weeksAhead: 2,
+        pickupWindow: '18:00-20:00'
+      },
+      once: true
+    });
+  });
 });

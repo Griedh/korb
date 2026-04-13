@@ -8,7 +8,7 @@ const parseUuid = (value: string, msg: string) => {
 };
 
 export const buildCli = () => {
-  const program = new Command().name('korb').description('REWE Pickup CLI').option('-p, --pretty', 'Pretty JSON output');
+  const program = new Command().name('reweCart').description('REWE Pickup CLI').option('-p, --pretty', 'Pretty JSON output');
 
   const store = program.command('store');
   store.command('search').argument('<ZIP>').action((zip) => setCmd(program, { type: 'StoreSearch', zipCode: zip }));
@@ -33,7 +33,7 @@ export const buildCli = () => {
   basket.action(() => setCmd(program, { type: 'BasketShow' }));
 
   const checkout = program.command('checkout');
-  checkout.command('create').argument('<TIMESLOT_ID>').action((id) => setCmd(program, { type: 'StartCheckout', timeslotId: parseUuid(id, 'Invalid timeslot ID (expected UUID, get IDs from korb timeslots)') }));
+  checkout.command('create').argument('<TIMESLOT_ID>').action((id) => setCmd(program, { type: 'StartCheckout', timeslotId: parseUuid(id, 'Invalid timeslot ID (expected UUID, get IDs from reweCart timeslots)') }));
   checkout.command('order').action(() => setCmd(program, { type: 'PlaceOrder' }));
   checkout.action(() => setCmd(program, { type: 'GetCheckout' }));
 
@@ -54,12 +54,12 @@ export const buildCli = () => {
 };
 
 const collect = (value: string, previous: string[]) => [...previous, value];
-const setCmd = (program: Command, cmd: any) => ((program as any)._korbCommand = cmd);
+const setCmd = (program: Command, cmd: any) => ((program as any)._reweCartCommand = cmd);
 
 export const parseInput = (argv: string[]) => {
   const program = buildCli();
   program.parse(argv);
-  return { cmd: (program as any)._korbCommand, pretty: !!program.opts().pretty };
+  return { cmd: (program as any)._reweCartCommand, pretty: !!program.opts().pretty };
 };
 
 export const renderCommand = (cmd: any): string[] => {
